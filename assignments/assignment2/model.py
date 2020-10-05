@@ -1,6 +1,6 @@
 import numpy as np
 
-from layers import FullyConnectedLayer, ReLULayer, softmax_with_cross_entropy, l2_regularization
+from layers import FullyConnectedLayer, ReLULayer, softmax_with_cross_entropy, l2_regularization, softmax
 
 
 class TwoLayerNet:
@@ -18,7 +18,9 @@ class TwoLayerNet:
         """
         self.reg = reg
         # TODO Create necessary layers
-        raise Exception("Not implemented!")
+        self.fc_1 = FullyConnectedLayer(n_input, hidden_layer_size)
+        self.relu_1 = ReLULayer()
+        self.fc_2 = FullyConnectedLayer(hidden_layer_size, n_output)
 
     def compute_loss_and_gradients(self, X, y):
         """
@@ -33,15 +35,28 @@ class TwoLayerNet:
         # clear parameter gradients aggregated from the previous pass
         # TODO Set parameter gradient to zeros
         # Hint: using self.params() might be useful!
-        raise Exception("Not implemented!")
+        for k in self.params().values():
+            k.grad = np.zeros_like(k.grad)
         
         # TODO Compute loss and fill param gradients
         # by running forward and backward passes through the model
+        X = self.fc_1.forward(X)
+        X = self.relu_1.forward(X)
+        X = self.fc_2.forward(X)
+        
+        loss, d_pred = softmax_with_cross_entropy(X, y)
+        
+        grad = self.fc_2.backward(d_pred)
+        grad = self.relu_1.backward(grad)
+        grad = self.fc_1.backward(grad)
         
         # After that, implement l2 regularization on all params
         # Hint: self.params() is useful again!
-        raise Exception("Not implemented!")
-
+        for p in self.params().values():
+            l, g = l2_regularization(p.value, self.reg)
+            loss += l
+            p.grad += g
+        
         return loss
 
     def predict(self, X):
@@ -58,15 +73,21 @@ class TwoLayerNet:
         # Hint: some of the code of the compute_loss_and_gradients
         # can be reused
         pred = np.zeros(X.shape[0], np.int)
-
-        raise Exception("Not implemented!")
+        X = self.fc_1.forward(X)
+        X = self.relu_1.forward(X)
+        X = self.fc_2.forward(X)
+        probs = softmax(X)
+        pred = np.argmax(probs, axis=1)
+        
         return pred
 
     def params(self):
-        result = {}
-
         # TODO Implement aggregating all of the params
-
-        raise Exception("Not implemented!")
+        result = {
+                  'fc1_W': self.fc_1.W,
+                  'fc1_B': self.fc_1.B,
+                  'fc2_W': self.fc_2.W,
+                  'fc2_B': self.fc_2.B
+                 }
 
         return result
